@@ -16,17 +16,43 @@ class DataProcessor():
         soup = BeautifulSoup(text, "html.parser")
         return soup.get_text()
 
-    def getTopics(self) -> dict:
+    def getTopics(self, get_batch:bool = False, get_map:bool = False) -> dict:
+        batch = []
+        map = {}
         topic_dict = {}
-        for topic in self.topics_object:
-            topic_dict[topic["Id"]] = self.parseText(topic["Title"]) + " " + self.parseText(topic["Body"])
-        return topic_dict
+        for i, topic in enumerate(self.topics_object):
+            text = self.parseText(topic["Title"]) + " " + self.parseText(topic["Body"])
+            if get_batch:
+                batch.append(text)
+            if get_map:
+                map[i] = topic['Id']
+            topic_dict[topic["Id"]] = text
 
-    def getCollection(self) -> dict:
+        results = [topic_dict] # for return tuple
+        if get_batch:
+            results.append(batch)
+        if get_map:
+            results.append(map)
+        return results
+
+    def getCollection(self, get_batch:bool = False, get_map:bool = False) -> dict:
+        batch = []
+        map = {}
         collection_dict = {}
-        for doc in self.collection_object:
-            collection_dict[doc["Id"]] = self.parseText(doc["Text"])
-        return collection_dict
+        for i, doc in enumerate(self.collection_object):
+            text = self.parseText(doc["Text"])
+            if get_batch:
+                batch.append(text)
+            if get_map:
+                map[i] = doc['Id']
+            collection_dict[doc["Id"]] = text
+
+        results = [collection_dict] # for return tuple
+        if get_batch:
+            results.append(batch)
+        if get_map:
+            results.append(map)
+        return results
 
     def getQrel(self) -> dict:
         with open(self.qrel_path, "r", encoding="utf-8") as f3:
@@ -41,10 +67,6 @@ class DataProcessor():
                 else:
                     qrel_dict[q_id] = [(d_id,score)]
             return qrel_dict
-        
-    # return d_id: embedding
-    def getEmbeddingCollection(self, collection):
-        pass
 
     def formatSamples(self, topics:dict, collection:dict, qrel:dict) -> list:
         samples = []

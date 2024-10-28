@@ -5,15 +5,16 @@ import csv
 
 # data processing
 data = DataProcessor("data/topics_1.json", "data/Answers.json", "data/qrel_1.tsv")
-topics = data.getTopics()
-collection = data.getCollection()
+topics, topic_batch, topic_map = data.getTopics(get_batch=True, get_map=True)
+collection, collection_batch, collection_map = data.getCollection(get_batch=True, get_map=True)
 
 # bi-encoder model setup
 encoder = CustomBiencoder("sentence-transformers/multi-qa-MiniLM-L6-cos-v1")
 model = encoder.getModel()
 
 # run
-data.getEmbeddingCollection()
+topic_embeddings = encoder.getEmbeddings(topic_batch)
+collection_embeddings = encoder.getEmbeddings(collection_batch)
 
 # fine-tuning
 qrel = data.getQrel()
