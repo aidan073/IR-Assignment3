@@ -7,12 +7,18 @@ import csv
 data = DataProcessor("data/topics_1.json", "data/Answers.json", "data/qrel_1.tsv")
 topics = data.getTopics()
 collection = data.getCollection()
-qrel = data.getQrel()
-samples = data.formatSamples(topics, collection, qrel)
 
 # bi-encoder model setup
 encoder = CustomBiencoder("sentence-transformers/multi-qa-MiniLM-L6-cos-v1")
 model = encoder.getModel()
+
+# run
+data.getEmbeddingCollection()
+
+# fine-tuning
+qrel = data.getQrel()
+samples = data.formatSamples(topics, collection, qrel)
+train_data, test_data, val_data = data.test_train_split(samples)
 
 # cross-encoder model setup
 crossencoder = CustomCrossencoder("cross-encoder/ms-marco-MiniLM-L-6-v2")

@@ -1,5 +1,6 @@
 import csv
 import json
+import numpy as np
 from bs4 import BeautifulSoup
 from collections import defaultdict
 
@@ -40,17 +41,33 @@ class DataProcessor():
                 else:
                     qrel_dict[q_id] = [(d_id,score)]
             return qrel_dict
+        
+    # return d_id: embedding
+    def getEmbeddingCollection(self, collection):
+        pass
 
     def formatSamples(self, topics:dict, collection:dict, qrel:dict) -> list:
         samples = []
         for q_id,value in qrel.items():
             for d_id, score in value:
-                sample = [topics[q_id], collection[d_id], score]
+                sample = {q_id: topics[q_id], d_id: collection[d_id], 'relevance': score}
                 samples.append(sample)
         return samples
 
-    def tokenize(self, text):
-        pass
+    def test_train_split(self, samples):
+        # shuffle data
+        samples = np.array(samples)
+        np.random.seed(73)
+        np.random.shuffle(samples)
+
+        # calculate splits for 90/5/5 and organize samples into train-test-val
+        train_end = int(0.9 * len(samples))
+        val_end = train_end + int(0.05 * len(samples))
+        train_data = samples[:train_end]
+        test_data = samples[val_end:]
+        val_data = samples[train_end:val_end]
+
+        return train_data, test_data, val_data
 
     def readTSV(self, result_path:str) -> dict:
         result = defaultdict(list)
