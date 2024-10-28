@@ -10,19 +10,20 @@ class DataProcessor():
             self.collection_object = json.load(f2)
         self.qrel_path = qrel_path
 
-    def parseText(self, text):
-        pass
+    def parseText(self, text:str) -> str:
+        soup = BeautifulSoup(text, "html.parser")
+        return soup.get_text()
 
     def getTopics(self) -> dict:
         topic_dict = {}
         for topic in self.topics_object:
-            topic_dict[topic["Id"]] = "[TITLE] " + topic["Title"] + " [BODY] " + topic["Body"]
+            topic_dict[topic["Id"]] = self.parseText(topic["Title"]) + " " + self.parseText(topic["Body"])
         return topic_dict
 
     def getCollection(self) -> dict:
         collection_dict = {}
         for doc in self.collection_object:
-            collection_dict[doc["Id"]] = doc["Text"]
+            collection_dict[doc["Id"]] = self.parseText(doc["Text"])
         return collection_dict
 
     def getQrel(self) -> dict:
@@ -45,6 +46,7 @@ class DataProcessor():
             for d_id, score in value:
                 sample = [topics[q_id], collection[d_id], score]
                 samples.append(sample)
+        return samples
 
-    def tokenize(self):
+    def tokenize(self, text):
         pass
