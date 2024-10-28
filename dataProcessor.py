@@ -1,6 +1,7 @@
 import csv
 import json
 from bs4 import BeautifulSoup
+from collections import defaultdict
 
 class DataProcessor():
     def __init__(self, topics_path:str, collection_path = None, qrel_path = None) -> None:
@@ -50,3 +51,14 @@ class DataProcessor():
 
     def tokenize(self, text):
         pass
+
+    def readTSV(self, result_path:str) -> dict:
+        result = defaultdict(list)
+
+        with open(result_path, "r") as file:
+            reader = csv.reader(file, delimiter="\t")
+            for row in reader:
+                qid = row[0]
+                value = row[2]
+                result[qid].append(value)
+        return dict(result)
