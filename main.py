@@ -14,8 +14,12 @@ encoder = CustomBiencoder("sentence-transformers/multi-qa-MiniLM-L6-cos-v1")
 model = encoder.getModel()
 
 # run
-topic_embeddings = encoder.getEmbeddings(topic_batch)
-collection_embeddings = encoder.getEmbeddings(collection_batch)
+# outfile_name = "topics"
+# topic_embeddings = encoder.getEmbeddings(topic_batch, outfile_name)
+# outfile_name = "collection"
+# collection_embeddings = encoder.getEmbeddings(collection_batch, outfile_name)
+topic_embeddings = encoder.loadEmbeddings("topics.npy")
+collection_embeddings = encoder.loadEmbeddings("collection.npy")
 encoder.writeTopN(topic_embeddings, collection_embeddings, topic_map, collection_map, "bi_encoder", "test.tsv")
 
 # fine-tuning

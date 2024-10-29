@@ -13,8 +13,13 @@ class CustomBiencoder():
         return self.model
     def setModel(self, model) -> None:
         self.model = model
-    def getEmbeddings(self, batch):
+    def getEmbeddings(self, batch, outfile_name=None):
         embeddings = self.model.encode(batch, batch_size=32, show_progress_bar=True)
+        if outfile_name:
+            np.save(outfile_name, embeddings)
+        return embeddings
+    def loadEmbeddings(self, embedding_path):
+        embeddings = np.load(embedding_path)
         return embeddings
     def writeTopN(self, queries, collection, q_map:dict, d_map:dict, run_name:str, output_path:str, top_n:int = 100):
         similarities = cosine_similarity(queries, collection)
