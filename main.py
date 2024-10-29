@@ -4,7 +4,8 @@ from customCrossencoder import CustomCrossencoder
 import csv
 
 # data processing
-data = DataProcessor("data/topics_1.json", "data/Answers.json", "data/qrel_1.tsv")
+#data = DataProcessor("data/topics_1.json", "data/Answers.json", "data/qrel_1.tsv")
+data = DataProcessor("data/topics_1_mini.json", "data/Answers_mini.json")
 topics, topic_batch, topic_map = data.getTopics(get_batch=True, get_map=True)
 collection, collection_batch, collection_map = data.getCollection(get_batch=True, get_map=True)
 
@@ -15,6 +16,7 @@ model = encoder.getModel()
 # run
 topic_embeddings = encoder.getEmbeddings(topic_batch)
 collection_embeddings = encoder.getEmbeddings(collection_batch)
+encoder.writeTopN(topic_embeddings, collection_embeddings, topic_map, collection_map, "bi_encoder", "test.tsv")
 
 # fine-tuning
 qrel = data.getQrel()
