@@ -16,11 +16,12 @@ class CustomBiencoder():
     def getEmbeddings(self, batch):
         embeddings = self.model.encode(batch, batch_size=32, show_progress_bar=True)
         return embeddings
-    def writeTopN(queries, collection, top_n, q_map, d_map, output_file):
+    def writeTopN(self, queries, collection, q_map:dict, d_map:dict, run_name:str, output_path:str, top_n:int = 100):
         similarities = cosine_similarity(queries, collection)
-        query_results = []
-        with open(output_file, "w", newline = '') as f:
-            writer = csv.writer(f)
-            for i in len(queries):
+        with open(output_path, "w", newline = '') as f:
+            writer = csv.writer(f, delimiter='\t')
+            for i in range(len(queries)):
                 top_indices = np.argsort(similarities[i])[::-1][:top_n]
-                query_results.append([(q_map[i], similarities[i][j]) for j in top_indices])
+                for rank, j in enumerate(top_indices):
+                    writer.writerow([q_map[i], 'Q0', d_map[j], rank+1, similarities[i][j], f"{run_name}"])
+                

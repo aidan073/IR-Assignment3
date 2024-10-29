@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 from collections import defaultdict
 
 class DataProcessor():
-    def __init__(self, topics_path:str, collection_path = None, qrel_path = None) -> None:
+    def __init__(self, topics_path:str, collection_path:str, qrel_path = None) -> None:
         with open(topics_path, "r", encoding="utf-8") as f1:
             self.topics_object = json.load(f1)
         with open(collection_path, "r", encoding="utf-8") as f2:
