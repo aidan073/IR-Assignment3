@@ -3,6 +3,7 @@ import json
 import numpy as np
 from bs4 import BeautifulSoup
 from collections import defaultdict
+from sentence_transformers import InputExample
 
 class DataProcessor():
     def __init__(self, topics_path:str, collection_path:str, qrel_path = None) -> None:
@@ -72,8 +73,7 @@ class DataProcessor():
         samples = []
         for q_id,value in qrel.items():
             for d_id, score in value:
-                sample = {q_id: topics[q_id], d_id: collection[d_id], 'relevance': score}
-                samples.append(sample)
+                samples.append(InputExample(texts=[topics[q_id], collection[d_id]], label=1 if score >= 1 else 0))
         return samples
 
     def test_train_split(self, samples):
