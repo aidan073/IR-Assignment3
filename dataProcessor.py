@@ -71,9 +71,9 @@ class DataProcessor():
 
     def formatSamples(self, topics:dict, collection:dict, qrel:dict) -> list:
         samples = []
-        for q_id,value in qrel.items():
-            for d_id, score in value:
-                samples.append(InputExample(texts=[topics[q_id], collection[d_id]], label=1 if score >= 1 else 0))
+        for q_id, items in qrel.items():
+            for tuple in items:
+                samples.append(InputExample(texts=[topics[q_id], collection[tuple[0]]], label=1.0 if tuple[1] >= 1 else 0.0))
         return samples
 
     def test_train_split(self, samples):
@@ -83,8 +83,8 @@ class DataProcessor():
         np.random.shuffle(samples)
 
         # calculate splits for 90/5/5 and organize samples into train-test-val
-        train_end = int(0.9 * len(samples))
-        val_end = train_end + int(0.05 * len(samples))
+        train_end = round(0.9 * len(samples))
+        val_end = train_end + round(0.5 * len(samples))
         train_data = samples[:train_end]
         test_data = samples[val_end:]
         val_data = samples[train_end:val_end]

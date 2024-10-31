@@ -5,21 +5,6 @@ from sentence_transformers import SentenceTransformer, losses, evaluation
 from torch.utils.data import DataLoader
 from sklearn.metrics.pairwise import cosine_similarity
 
-class BiEncoderDataset(torch.utils.data.Dataset):
-    def __init__(self, queries, responses, labels):
-        self.queries = queries
-        self.responses = responses
-        self.labels = labels
-
-    def __len__(self):
-        return len(self.queries)
-
-    def __getitem__(self, idx):
-        query = self.queries[idx]
-        response = self.responses[idx]
-        label = self.labels[idx]
-        return query, response, label
-
 class CustomBiencoder():
     def __init__(self, model_name:str) -> None:
         device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -44,39 +29,16 @@ class CustomBiencoder():
     
     def fineTune(self, train_examples, validation_examples, num_epochs = 1):
         train_dataloader = DataLoader(train_examples, shuffle=False, batch_size=32)
-        val_dataloader = DataLoader(validation_examples, shuffle=False, batch_size=32)
-        train_loss = losses.CosineSimilarityLoss(model=self.model)
-
-        for epoch in range(num_epochs):
-
-            # train
-            self.model.train()
-            total_train_loss = 0
-            
-            for batch in train_dataloader:
-                self.model.zero_grad()
-                loss_value = train_loss(batch)
-                total_train_loss += loss_value.item()
-                loss_value.backward()
-                torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
-                self.model.optimizer.step()
-
-            avg_train_loss = total_train_loss / len(train_dataloader)
-            print(f"Epoch {epoch + 1}/{num_epochs} - Training Loss: {avg_train_loss:.4f}")
-
-            # validation
-            self.model.eval()
-            total_val_loss = 0
-            
-            with torch.no_grad():
-                for val_batch in val_dataloader:
-                    val_loss = train_loss(val_batch)
-                    total_val_loss += val_loss.item()
-
-            avg_val_loss = total_val_loss / len(val_dataloader)
-            print(f"Epoch {epoch + 1}/{num_epochs} - Validation Loss: {avg_val_loss:.4f}")
-
-
+        train_loss = losses.CoSENTLoss(model=self.model)
+        sentences1 = []
+        sentences2 = []
+        scores = []
+        for example in validation_examples:
+            sentences1.append(example.texts[0])
+            sentences2.append(example.texts[1])
+            scores.append(example.label)
+        dev_evaluator = evaluation.EmbeddingSimilarityEvaluator(sentences1=sentences1, sentences2=sentences2, scores=scores, main_similarity=evaluation.SimilarityFunction.COSINE, name="sts-dev")
+        self.model.fit(train_objectives=[(train_dataloader, train_loss)], epochs=num_epochs, warmup_steps=100, evaluator=dev_evaluator)
 
     def writeTopN(self, queries, collection, q_map:dict, d_map:dict, run_name:str, output_path:str, top_n:int = 100):
         similarities = cosine_similarity(queries, collection)

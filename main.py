@@ -1,6 +1,6 @@
 from dataProcessor import DataProcessor
 from customBiencoder import CustomBiencoder
-from customCrossencoder import CustomCrossencoder
+#from customCrossencoder import CustomCrossencoder
 import argparse
 import csv
 
@@ -16,8 +16,8 @@ import csv
 # arguments = parser.parse_args()
 
 # data processing
-# data = DataProcessor("data/topics_1.json", "data/Answers.json", "data/qrel_1.tsv")
-data = DataProcessor("data/topics_1_mini.json", "data/Answers_mini.json", "data/qrel_1_mini")
+data = DataProcessor("data/topics_1.json", "data/Answers.json", "data/qrel_1.tsv")
+#data = DataProcessor("data/topics_1_mini.json", "data/Answers_mini.json", "data/qrel_1_mini")
 topics, topic_batch, topic_map = data.getTopics(get_batch=True, get_map=True)
 collection, collection_batch, collection_map = data.getCollection(get_batch=True, get_map=True)
 
@@ -30,21 +30,21 @@ model = encoder.getModel()
 # topic_embeddings = encoder.getEmbeddings(topic_batch, outfile_name)
 # outfile_name = "collection"
 # collection_embeddings = encoder.getEmbeddings(collection_batch, outfile_name)
-topic_embeddings = encoder.getEmbeddings(topic_batch)
-collection_embeddings = encoder.getEmbeddings(collection_batch)
-# topic_embeddings = encoder.loadEmbeddings("topics.npy")
-# collection_embeddings = encoder.loadEmbeddings("collection.npy")
+# topic_embeddings = encoder.getEmbeddings(topic_batch)
+# collection_embeddings = encoder.getEmbeddings(collection_batch)
+topic_embeddings = encoder.loadEmbeddings("topics.npy")
+collection_embeddings = encoder.loadEmbeddings("collection.npy")
 encoder.writeTopN(topic_embeddings, collection_embeddings, topic_map, collection_map, "bi_encoder", "test.tsv")
 
 # fine-tuning
 qrel = data.getQrel()
 samples = data.formatSamples(topics, collection, qrel)
 train_data, test_data, val_data = data.test_train_split(samples)
-encoder.fineTune(train_data, test_data, 3)
+encoder.fineTune(train_data, val_data, 3)
 
 # cross-encoder model setup
-crossencoder = CustomCrossencoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
-crossmodel = crossencoder.getModel()
-testdict = data.readTSV('data/result_bm25_1.tsv')
+# crossencoder = CustomCrossencoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
+# crossmodel = crossencoder.getModel()
+# testdict = data.readTSV('data/result_bm25_1.tsv')
 
-crossmodel.rerank(testdict, topics, collection)
+# crossmodel.rerank(testdict, topics, collection)
