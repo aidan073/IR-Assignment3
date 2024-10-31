@@ -18,36 +18,39 @@ import csv
 # data processing
 data = DataProcessor("data/topics_1.json", "data/Answers.json", "data/qrel_1.tsv")
 #data = DataProcessor("data/topics_1_mini.json", "data/Answers_mini.json", "data/qrel_1_mini")
-topics, topic_batch, topic_map = data.getTopics(get_batch=True, get_map=True)
-collection, collection_batch, collection_map = data.getCollection(get_batch=True, get_map=True)
+topics, topic_batch, topic_map, t_Rmap = data.getTopics(get_batch=True, get_map=True, get_Rmap=True)
+collection, collection_batch, collection_map, d_Rmap = data.getCollection(get_batch=True, get_map=True, get_Rmap=True)
 
 # bi-encoder model setup
 encoder = CustomBiencoder("sentence-transformers/multi-qa-MiniLM-L6-cos-v1")
 model = encoder.getModel()
 
 # run
-# outfile_name = "topics"
-# topic_embeddings = encoder.getEmbeddings(topic_batch, outfile_name)
-# outfile_name = "collection"
-# collection_embeddings = encoder.getEmbeddings(collection_batch, outfile_name)
-# topic_embeddings = encoder.getEmbeddings(topic_batch)
-# collection_embeddings = encoder.getEmbeddings(collection_batch)
-topic_embeddings = encoder.loadEmbeddings("topics.npy")
-collection_embeddings = encoder.loadEmbeddings("collection.npy")
-encoder.writeTopN(topic_embeddings, collection_embeddings, "bi_encoder", "result_bi_1.tsv", q_map=topic_map, d_map=collection_map)
+#outfile_name = "results/topics2"
+#topic_embeddings = encoder.getEmbeddings(topic_batch, outfile_name)
+#outfile_name = "results/collection"
+#collection_embeddings = encoder.getEmbeddings(collection_batch, outfile_name)
+#topic_embeddings = encoder.getEmbeddings(topic_batch)
+#collection_embeddings = encoder.getEmbeddings(collection_batch)
+
+topic_embeddings = encoder.loadEmbeddings("results/topics.npy")
+collection_embeddings = encoder.loadEmbeddings("results/collection.npy")
+# encoder.writeTopN(topic_embeddings, collection_embeddings, "bi_encoder", "results/result_bi_1.tsv", q_map=topic_map, d_map=collection_map)
 
 # fine-tuning
 qrel = data.getQrel()
 samples = data.formatSamples(topics, collection, qrel)
 train_data, test_data, val_data = data.test_train_split(samples)
 encoder.fineTune(train_data, val_data, 3)
+model.save("data/modelF")
+#encoder.loadModel("data/modelF")
 
 test_topic_batch, test_collection_batch, t_qmap, t_dmap = data.getSubsetBatches(test_data)
 test_topic_embs = encoder.getEmbeddings(test_topic_batch)
 test_collection_embs = encoder.getEmbeddings(test_collection_batch)
 data.genQrel(test_data)
 
-encoder.writeTopN()
+encoder.writeTopN(test_topic_embs, test_collection_embs, "bi_encoder_fine-tuned", "results/result_bi_1.tsv", q_map = t_qmap, d_map=t_dmap)
 
 # cross-encoder model setup
 # crossencoder = CustomCrossencoder("cross-encoder/ms-marco-MiniLM-L-6-v2")

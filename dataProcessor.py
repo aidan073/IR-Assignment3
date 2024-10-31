@@ -1,5 +1,6 @@
 import csv
 import json
+import random
 import numpy as np
 from bs4 import BeautifulSoup
 from collections import defaultdict
@@ -82,27 +83,37 @@ class DataProcessor():
     def formatSamples(self, topics:dict, collection:dict, qrel:dict) -> list:
         samples = []
         for q_id, items in qrel.items():
+            temp = []
             for tuple in items:
-                samples.append(InputExample(guid = f"{q_id}, {tuple[0]}", texts=[topics[q_id], collection[tuple[0]]], label=1.0 if tuple[1] >= 1 else 0.0))
-        return samples
+                temp.append(InputExample(guid = f"{q_id},{tuple[0]}", texts=[topics[q_id], collection[tuple[0]]], label=1.0 if tuple[1] >= 1 else 0.0))
+            samples.append(temp)
+        return samples # [[*all inputexamples for a qid], ...]
 
     # given the testing set, find its corresponding embeddings
-    def getSubsetBatches(self, test_examples, t_Rmap, d_Rmap, t_embs, d_embs):
-        qembs = {}
-        dembs = {}
+    def getSubsetBatches(self, test_examples):
+        seen_qids = set() # prevent adding duplicate sentences to query batch
+        seen_dids = set() # prevent adding duplicate sentences to document batch
+        q_batch = []
+        d_batch = []
         qmap = {}
         dmap = {}
-        for idx, example in enumerate(test_examples):
+        current_qid_index = 0
+        current_did_index = 0
+        for example in test_examples:
             example_ids = example.guid.split(",")
-            q_id = example_ids[0]
-            d_id = example_ids[1]
-            if q_id not in qembs:
-                qembs[q_id] = t_embs[t_Rmap[q_id]]
-                qmap[idx] = q_id
-            if d_id not in dembs:
-                dembs[d_id] = d_embs[d_Rmap[d_id]]
-                dmap[idx] = d_id
-        return qembs, dembs, qmap, dmap
+            q_id = int(example_ids[0])
+            d_id = int(example_ids[1])
+            if q_id not in seen_qids: # if qid has not been seen
+                seen_qids.add(q_id) # qid has now been seen
+                q_batch.append(example.texts[0]) # add query text to batch
+                qmap[current_qid_index] = q_id # map batch index to qid for retrieval later on
+                current_qid_index+=1 
+            if d_id not in seen_dids: # if did has not been seen
+                seen_dids.add(d_id) # did has now been seen
+                d_batch.append(example.texts[1]) # add document text to batch
+                dmap[current_did_index] = d_id # map batch index to did for retrieval later on
+                current_did_index+=1
+        return q_batch, d_batch, qmap, dmap
     
     # need to make a new qrel for the test set
     def genQrel(self, test_examples):
@@ -112,22 +123,29 @@ class DataProcessor():
                 example_ids = example.guid.split(",")
                 q_id = example_ids[0]
                 d_id = example_ids[1]
-                score = example.label
+                score = int(example.label)
                 writer.writerow([q_id, 0, d_id, score])
 
 
     def test_train_split(self, samples):
+        if len(samples) < 20: # will result in empty splits
+            raise ValueError("Sample size must be >= 20")
+
         # shuffle data
-        samples = np.array(samples)
-        np.random.seed(73)
-        np.random.shuffle(samples)
+        random.seed(73)
+        random.shuffle(samples)
 
         # calculate splits for 90/5/5 and organize samples into train-test-val
         train_end = round(0.9 * len(samples))
-        val_end = train_end + round(0.5 * len(samples))
+        val_end = train_end + round(0.05 * len(samples))
         train_data = samples[:train_end]
         test_data = samples[val_end:]
         val_data = samples[train_end:val_end]
+
+        # unpack samples, which were grouped by qid, into individiual samples
+        train_data = [example for group in train_data for example in group]
+        test_data = [example for group in test_data for example in group]
+        val_data = [example for group in val_data for example in group]
 
         return train_data, test_data, val_data
 
