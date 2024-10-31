@@ -17,9 +17,10 @@ class DataProcessor():
         soup = BeautifulSoup(text, "html.parser")
         return soup.get_text()
 
-    def getTopics(self, get_batch:bool = False, get_map:bool = False) -> dict:
+    def getTopics(self, get_batch:bool = False, get_map:bool = False, get_Rmap:bool=False) -> dict:
         batch = []
         map = {}
+        Rmap = {} # reverse of map
         topic_dict = {}
         for i, topic in enumerate(self.topics_object):
             text = self.parseText(topic["Title"]) + " " + self.parseText(topic["Body"])
@@ -27,6 +28,8 @@ class DataProcessor():
                 batch.append(text)
             if get_map:
                 map[i] = topic['Id']
+            if get_Rmap:
+                Rmap[topic['Id']] = i
             topic_dict[topic["Id"]] = text
 
         results = [topic_dict] # for return tuple
@@ -34,11 +37,14 @@ class DataProcessor():
             results.append(batch)
         if get_map:
             results.append(map)
+        if get_Rmap:
+            results.append(Rmap)
         return results
 
-    def getCollection(self, get_batch:bool = False, get_map:bool = False) -> dict:
+    def getCollection(self, get_batch:bool = False, get_map:bool = False, get_Rmap:bool = False) -> dict:
         batch = []
         map = {}
+        Rmap = {}
         collection_dict = {}
         for i, doc in enumerate(self.collection_object):
             text = self.parseText(doc["Text"])
@@ -46,6 +52,8 @@ class DataProcessor():
                 batch.append(text)
             if get_map:
                 map[i] = doc['Id']
+            if get_Rmap:
+                Rmap[doc['Id']] = i
             collection_dict[doc["Id"]] = text
 
         results = [collection_dict] # for return tuple
@@ -53,6 +61,8 @@ class DataProcessor():
             results.append(batch)
         if get_map:
             results.append(map)
+        if get_Rmap:
+            results.append(Rmap)
         return results
 
     def getQrel(self) -> dict:
@@ -73,8 +83,38 @@ class DataProcessor():
         samples = []
         for q_id, items in qrel.items():
             for tuple in items:
-                samples.append(InputExample(texts=[topics[q_id], collection[tuple[0]]], label=1.0 if tuple[1] >= 1 else 0.0))
+                samples.append(InputExample(guid = f"{q_id}, {tuple[0]}", texts=[topics[q_id], collection[tuple[0]]], label=1.0 if tuple[1] >= 1 else 0.0))
         return samples
+
+    # given the testing set, find its corresponding embeddings
+    def getSubsetBatches(self, test_examples, t_Rmap, d_Rmap, t_embs, d_embs):
+        qembs = {}
+        dembs = {}
+        qmap = {}
+        dmap = {}
+        for idx, example in enumerate(test_examples):
+            example_ids = example.guid.split(",")
+            q_id = example_ids[0]
+            d_id = example_ids[1]
+            if q_id not in qembs:
+                qembs[q_id] = t_embs[t_Rmap[q_id]]
+                qmap[idx] = q_id
+            if d_id not in dembs:
+                dembs[d_id] = d_embs[d_Rmap[d_id]]
+                dmap[idx] = d_id
+        return qembs, dembs, qmap, dmap
+    
+    # need to make a new qrel for the test set
+    def genQrel(self, test_examples):
+        with open("test_qrel.tsv", "w", newline = '') as f:
+            writer = csv.writer(f, delimiter='\t')
+            for example in test_examples:
+                example_ids = example.guid.split(",")
+                q_id = example_ids[0]
+                d_id = example_ids[1]
+                score = example.label
+                writer.writerow([q_id, 0, d_id, score])
+
 
     def test_train_split(self, samples):
         # shuffle data
