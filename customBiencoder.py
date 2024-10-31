@@ -17,6 +17,9 @@ class CustomBiencoder():
     def setModel(self, model) -> None:
         self.model = model
 
+    def loadModel(self, path) -> None:
+        self.model = SentenceTransformer(path)
+
     def getEmbeddings(self, batch, outfile_name=None):
         embeddings = self.model.encode(batch, batch_size=32, show_progress_bar=True)
         if outfile_name:
