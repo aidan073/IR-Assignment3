@@ -34,13 +34,20 @@ model = encoder.getModel()
 # collection_embeddings = encoder.getEmbeddings(collection_batch)
 topic_embeddings = encoder.loadEmbeddings("topics.npy")
 collection_embeddings = encoder.loadEmbeddings("collection.npy")
-encoder.writeTopN(topic_embeddings, collection_embeddings, topic_map, collection_map, "bi_encoder", "test.tsv")
+encoder.writeTopN(topic_embeddings, collection_embeddings, "bi_encoder", "result_bi_1.tsv", q_map=topic_map, d_map=collection_map)
 
 # fine-tuning
 qrel = data.getQrel()
 samples = data.formatSamples(topics, collection, qrel)
 train_data, test_data, val_data = data.test_train_split(samples)
 encoder.fineTune(train_data, val_data, 3)
+
+test_topic_batch, test_collection_batch, t_qmap, t_dmap = data.getSubsetBatches(test_data)
+test_topic_embs = encoder.getEmbeddings(test_topic_batch)
+test_collection_embs = encoder.getEmbeddings(test_collection_batch)
+data.genQrel(test_data)
+
+encoder.writeTopN()
 
 # cross-encoder model setup
 # crossencoder = CustomCrossencoder("cross-encoder/ms-marco-MiniLM-L-6-v2")

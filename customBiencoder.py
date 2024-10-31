@@ -38,9 +38,9 @@ class CustomBiencoder():
             sentences2.append(example.texts[1])
             scores.append(example.label)
         dev_evaluator = evaluation.EmbeddingSimilarityEvaluator(sentences1=sentences1, sentences2=sentences2, scores=scores, main_similarity=evaluation.SimilarityFunction.COSINE, name="sts-dev")
-        self.model.fit(train_objectives=[(train_dataloader, train_loss)], epochs=num_epochs, warmup_steps=100, evaluator=dev_evaluator)
+        self.model.fit(train_objectives=[(train_dataloader, train_loss)], epochs=num_epochs, warmup_steps=100, evaluator=dev_evaluator, evaluation_steps=None)
 
-    def writeTopN(self, queries, collection, q_map:dict, d_map:dict, run_name:str, output_path:str, top_n:int = 100):
+    def writeTopN(self, queries, collection, run_name:str, output_path:str, top_n:int = 100, q_map:dict = None, d_map:dict = None):
         similarities = cosine_similarity(queries, collection)
         with open(output_path, "w", newline = '') as f:
             writer = csv.writer(f, delimiter='\t')
