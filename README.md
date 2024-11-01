@@ -16,7 +16,7 @@ evaluation graphs/tables
 
 To run specifically for the assignment topics_2 results using pre-finetuned models, run:
 
-- python main.py <topics_2 path> <Answers path> -o result_bi_2.tsv result_bi_ft_2.tsv result_ce_2.tsv result_ce_ft_2.tsv -f <finetuned bi-encoder path> <finetuned cross-encoder path>
+python main.py \<topics\_2 path\> \<Answers path\> -o result\_bi\_2.tsv result\_bi\_ft\_2.tsv result\_ce\_2.tsv result\_ce\_ft\_2.tsv -f \<finetuned bi-encoder path\> \<finetuned cross-encoder path\>
 
 For more advanced usage:
 
