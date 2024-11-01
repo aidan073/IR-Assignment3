@@ -1,6 +1,6 @@
 from dataProcessor import DataProcessor
 from customBiencoder import CustomBiencoder
-#from customCrossencoder import CustomCrossencoder
+from customCrossencoder import CustomCrossencoder
 import argparse
 import csv
 
@@ -50,6 +50,12 @@ encoder.writeTopN(topic_embeddings, collection_embeddings, "bi_encoder", bi_outp
 
 print("Bi-encoder base results obtained\n")
 
+# run base crossencoder
+crossencoder = CustomCrossencoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
+tsvdict = data.readTSV(bi_output_path)
+crossencoder.rerank(tsvdict, topics, collection, ce_output_path)
+print("Crossencoder base results obtained\n")
+
 # fine-tuning
 if qrel_path:
     qrel = data.getQrel()
@@ -58,26 +64,28 @@ if qrel_path:
     if not fine_tuned_paths:
         encoder.fineTune(train_data, val_data, 3)
         model.save("model/fine-tuned-be")
+        crossencoder.fine_tune(train_data, val_data, test_data)
         print("Fine-tuning complete\n")
     else:
         encoder.loadModel(ft_bi_path)
+        fine_tuned_crossencoder = CustomCrossencoder(ft_ce_path)
     test_topic_batch, test_collection_batch, t_qmap, t_dmap = data.getSubsetBatches(test_data)
     test_topic_embs = encoder.getEmbeddings(test_topic_batch)
     test_collection_embs = encoder.getEmbeddings(test_collection_batch)
     data.genQrel(test_data)
     encoder.writeTopN(test_topic_embs, test_collection_embs, "bi_encoder_fine-tuned", bi_output_path_ft, q_map=t_qmap, d_map=t_dmap)
     print("Bi-encoder fine-tuned results obtained\n")
+    ft_tsvdict = data.readTSV(bi_output_path_ft)
+    fine_tuned_crossencoder.rerank(ft_tsvdict, topics, collection, ce_output_path_ft)
+    print("Crossencoder fine-tuned results obtained\n")
 else:
     encoder.loadModel(ft_bi_path)
+    fine_tuned_crossencoder = CustomCrossencoder(ft_ce_path)
     topic_embeddings = encoder.getEmbeddings(topic_batch)
     collection_embeddings = encoder.getEmbeddings(collection_batch)
     encoder.writeTopN(topic_embeddings, collection_embeddings, "bi_encoder_fine-tuned", bi_output_path_ft, q_map=topic_map, d_map=collection_map)
     print("Bi-encoder fine-tuned results obtained\n")
+    ft_tsvdict = data.readTSV(bi_output_path_ft)
+    fine_tuned_crossencoder.rerank(ft_tsvdict, topics, collection, ce_output_path_ft)
+    print("Crossencoder fine-tuned results obtained\n")
 
-
-# cross-encoder model setup
-# crossencoder = CustomCrossencoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
-# crossmodel = crossencoder.getModel()
-# testdict = data.readTSV('data/result_bm25_1.tsv')
-
-# crossmodel.rerank(testdict, topics, collection)
