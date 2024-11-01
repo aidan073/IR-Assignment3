@@ -1,5 +1,15 @@
 # IR-Assignment3
 
+AidanB-
+bi-encoder
+dataprocessor
+
+EvanK-
+cross-encoder
+evaluation graphs/tables
+
+# Directions
+
 - cd to the directory and run: pip install -r requirements.txt (recommend using venv or conda env since some specific version requirements)
 * Use python version 3.12.0
 
