@@ -15,6 +15,7 @@ parser.add_argument("-L", "--load_paths", nargs=2, metavar=("TOPIC_EMBEDDINGS_PA
 
 args = parser.parse_args()
 
+# checking command line args
 topic_path = args.topic_path
 collection_path = args.collection_path
 bi_output_path, bi_output_path_ft, ce_output_path, ce_output_path_ft = args.output_paths
@@ -55,19 +56,22 @@ tsvdict = data.readTSV(bi_output_path)
 crossencoder.rerank(tsvdict, topics, collection, ce_output_path)
 print("Crossencoder base results obtained\n")
 
-# fine-tuning
+# if qrel_path command line arg provided
 if qrel_path:
     qrel = data.getQrel()
     samples = data.formatSamples(topics, collection, qrel)
     train_data, test_data, val_data = data.test_train_split(samples)
+    # if fine-tuned models not passed in command line args
     if not fine_tuned_paths:
         encoder.fineTune(train_data, val_data, 3)
         model.save("model/fine-tuned-be")
         crossencoder.fine_tune(train_data, val_data, test_data)
         print("Fine-tuning complete\n")
+    # if fine-tuned models passed in command line args
     else:
         encoder.loadModel(ft_bi_path)
         fine_tuned_crossencoder = CustomCrossencoder(ft_ce_path)
+    # get results for fine-tuned models
     test_topic_batch, test_collection_batch, t_qmap, t_dmap = data.getSubsetBatches(test_data)
     test_topic_embs = encoder.getEmbeddings(test_topic_batch)
     test_collection_embs = encoder.getEmbeddings(test_collection_batch)
@@ -77,6 +81,7 @@ if qrel_path:
     ft_tsvdict = data.readTSV(bi_output_path_ft)
     fine_tuned_crossencoder.rerank(ft_tsvdict, topics, collection, ce_output_path_ft)
     print("Crossencoder fine-tuned results obtained\n")
+# if no qrel_path command line arg provided, assume fine-tuned models were provided
 else:
     encoder.loadModel(ft_bi_path)
     fine_tuned_crossencoder = CustomCrossencoder(ft_ce_path)
