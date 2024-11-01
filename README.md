@@ -1,11 +1,11 @@
 # IR-Assignment3
 
 AidanB-
-bi-encoder
+bi-encoder,
 dataprocessor
 
 EvanK-
-cross-encoder
+cross-encoder,
 evaluation graphs/tables
 
 # Directions
