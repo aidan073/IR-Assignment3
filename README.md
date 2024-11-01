@@ -22,11 +22,11 @@ For more advanced usage:
 
 usage: python main.py \<topics\_path\> \<Answers\_path\> \<-o \<bi\_base\> \<bi\_ft\> \<ce\_base\> \<ce\_ft\>\> \[-f \<ft\_biencoder\_path\> \<ft\_ce\_path\>\] \[-q \<qrel\_path\>\]
 
-arguments:
+arguments:  
   \<topics\_path\>           Path to topics.json file  
   \<Answers\_path\>          Path to Answers.json file
 
-options: 
+options:  
   -o \<output\_filename1\> \<output\_filename2\> \<output\_filename3\> \<output\_filename4\>  
   -f \<ft\_biencoder\_path\> \<ft\_ce\_path\>           paths to pre-finetuned models  
   -q \<qrel\_path\>            path to qrel file (fine tunes model if -q but not -f)
