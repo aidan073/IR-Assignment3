@@ -1,5 +1,4 @@
 from sentence_transformers import InputExample, CrossEncoder, util
-from sentence_transformers.evaluation import BinaryClassificationEvaluator
 from dataProcessor import DataProcessor
 import torch
 import csv
@@ -38,35 +37,64 @@ class CustomCrossencoder():
             test_data = [InputExample(texts=[ex[0], ex[1]], label=ex[2]) for ex in test_data]
 
         train_dataloader = DataLoader(train_data, shuffle=True, batch_size=batch_size)
-        evaluator = BinaryClassificationEvaluator.from_input_examples(val_data, name="validation")
 
+        def custom_evaluate(data, name):
+            correct_predictions = 0
+            for example in data:
+                prediction_score = self.model.predict([(example.texts[0], example.texts[1])])[0]
+                predicted_label = 1 if prediction_score >= 0.5 else 0
+                if predicted_label == example.label:
+                    correct_predictions += 1
+            accuracy = correct_predictions / len(data)
+            return accuracy
+
+        # Fine-tuning loop
         self.model.fit(
             train_dataloader=train_dataloader,
-            evaluator=evaluator,
             epochs=epochs,
-            evaluation_steps=10000,
-            warmup_steps=warmup_steps,
-            output_path="ftcrossencoder" 
+            warmup_steps=warmup_steps
         )
 
-        # Evaluate on the test set after fine-tuning
-        test_evaluator = BinaryClassificationEvaluator.from_input_examples(test_data, name="test")
-        test_evaluator(self.model)
+        # Save the model and tokenizer after fine-tuning
+        model_path = "model/ftcrossencoder"
+        self.model.save_pretrained(model_path)
+        self.model.tokenizer.save_pretrained(model_path)
+
+        # Evaluate on validation and test sets
+        custom_evaluate(val_data, name="Validation")
+        custom_evaluate(test_data, name="Test")
+
 
 # Data Loading
 data = DataProcessor("data/topics_1.json", "data/Answers.json", "data/qrel_1.tsv")
 topics, topic_batch, topic_map = data.getTopics(get_batch=True, get_map=True)
 collection, collection_batch, collection_map = data.getCollection(get_batch=True, get_map=True)
 
+# Using fine-tuned model for reranking
+fine_tuned_crossencoder = CustomCrossencoder("model/ftcrossencoder")
+tsvdict1 = data.readTSV('result_bi_ft_1.tsv')
+fine_tuned_crossencoder.rerank(tsvdict1, topics, collection, "result_ce_ft_1.tsv")
+
+# Data Loading
+data = DataProcessor("data/topics_2.json", "data/Answers.json", "data/qrel_1.tsv")
+topics, topic_batch, topic_map = data.getTopics(get_batch=True, get_map=True)
+collection, collection_batch, collection_map = data.getCollection(get_batch=True, get_map=True)
+
+# Using fine-tuned model for reranking
+fine_tuned_crossencoder = CustomCrossencoder("model/ftcrossencoder")
+tsvdict2 = data.readTSV('result_bi_ft_2.tsv')
+fine_tuned_crossencoder.rerank(tsvdict2, topics, collection, "result_ce_ft_2.tsv")
+
+'''
 # Initialize CrossEncoder and Data
 crossencoder = CustomCrossencoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
-tsvdict1 = data.readTSV('test.tsv') #result_bi_1.tsv
-tsvdict2 = data.readTSV('test.tsv') #result_bi_2.tsv
+tsvdict1 = data.readTSV('result_bi_1.tsv')
 crossencoder.rerank(tsvdict1, topics, collection, "result_ce_1.tsv")
-crossencoder.rerank(tsvdict2, topics, collection, "result_ce_2.tsv")
 
 
-data = DataProcessor("data/topics_2.json", "data/Answers.json", "data/qrel_1.tsv")
+# Fine-tuning the model
+crossencoder = CustomCrossencoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
+data = DataProcessor("data/topics_1.json", "data/Answers.json", "data/qrel_1.tsv")
 topics, topic_batch, topic_map = data.getTopics(get_batch=True, get_map=True)
 collection, collection_batch, collection_map = data.getCollection(get_batch=True, get_map=True)
 
@@ -74,10 +102,6 @@ qrel = data.getQrel()
 samples = data.formatSamples(topics, collection, qrel)
 train_data, test_data, val_data = data.test_train_split(samples)
 
-crossencoder.fine_tune(train_data, val_data, test_data) #
+crossencoder.fine_tune(train_data, val_data, test_data)
 
-fine_tuned_crossencoder = CustomCrossencoder("ftcrossencoder") #
-tsvdict1 = data.readTSV('test.tsv') #result_bi_ft_1.tsv
-tsvdict2 = data.readTSV('test.tsv') #result_bi_ft_2.tsv
-fine_tuned_crossencoder.rerank(tsvdict1, topics, collection, "result_ce_ft_1.tsv")
-fine_tuned_crossencoder.rerank(tsvdict2, topics, collection, "result_ce_ft_2.tsv")
+'''
