@@ -6,6 +6,7 @@ from bs4 import BeautifulSoup
 from collections import defaultdict
 from sentence_transformers import InputExample
 
+# Class to perform many different data related functions/processes
 class DataProcessor():
     def __init__(self, topics_path:str, collection_path:str, qrel_path = None) -> None:
         with open(topics_path, "r", encoding="utf-8") as f1:
@@ -14,10 +15,12 @@ class DataProcessor():
             self.collection_object = json.load(f2)
         self.qrel_path = qrel_path
 
+    # get plain text from html
     def parseText(self, text:str) -> str:
         soup = BeautifulSoup(text, "html.parser")
         return soup.get_text()
 
+    # get topics, and optional containers for topics to be used in different functions
     def getTopics(self, get_batch:bool = False, get_map:bool = False, get_Rmap:bool=False) -> dict:
         batch = []
         map = {}
@@ -42,6 +45,7 @@ class DataProcessor():
             results.append(Rmap)
         return results
 
+    # get collection, and optional containers for collection to be used in different functions
     def getCollection(self, get_batch:bool = False, get_map:bool = False, get_Rmap:bool = False) -> dict:
         batch = []
         map = {}
@@ -66,6 +70,7 @@ class DataProcessor():
             results.append(Rmap)
         return results
 
+    # get dict from qrel file
     def getQrel(self) -> dict:
         with open(self.qrel_path, "r", encoding="utf-8") as f3:
             qrel_reader = csv.reader(f3, delimiter='\t')
@@ -80,6 +85,7 @@ class DataProcessor():
                     qrel_dict[q_id] = [(d_id,score)]
             return qrel_dict
 
+    # create InputExample objects from data
     def formatSamples(self, topics:dict, collection:dict, qrel:dict) -> list:
         samples = []
         for q_id, items in qrel.items():
@@ -89,7 +95,7 @@ class DataProcessor():
             samples.append(temp)
         return samples # [[*all inputexamples for a qid], ...]
 
-    # given the testing set, find its corresponding embeddings
+    # create batches from testing set and get mapping back to original query/doc ids
     def getSubsetBatches(self, test_examples):
         seen_qids = set() # prevent adding duplicate sentences to query batch
         seen_dids = set() # prevent adding duplicate sentences to document batch
@@ -126,7 +132,7 @@ class DataProcessor():
                 score = int(example.label)
                 writer.writerow([q_id, 0, d_id, score])
 
-
+    # 90/5/5 split on samples
     def test_train_split(self, samples):
         if len(samples) < 20: # will result in empty splits
             raise ValueError("Sample size must be >= 20")
