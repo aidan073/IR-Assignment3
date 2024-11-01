@@ -2,7 +2,6 @@ from dataProcessor import DataProcessor
 from customBiencoder import CustomBiencoder
 from customCrossencoder import CustomCrossencoder
 import argparse
-import csv
 
 parser = argparse.ArgumentParser(description="Process paths for topics, collection, fine-tuned model paths, result file output paths, optional qrel and embeddings.")
 
