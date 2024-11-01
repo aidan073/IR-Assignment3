@@ -23,15 +23,15 @@ For more advanced usage:
 usage: python main.py \<topics\_path\> \<Answers\_path\> \<-o \<bi\_base\> \<bi\_ft\> \<ce\_base\> \<ce\_ft\>\> \[-f \<ft\_biencoder\_path\> \<ft\_ce\_path\>\] \[-q \<qrel\_path\>\]
 
 arguments:
-  \<topics\_path\>           Path to topics.json file
+  \<topics\_path\>           Path to topics.json file  
   \<Answers\_path\>          Path to Answers.json file
 
 options: 
-  -o \<output\_filename1\> \<output\_filename2\> \<output\_filename3\> \<output\_filename4\>
-  -f \<ft\_biencoder\_path\> \<ft\_ce\_path\>           paths to pre-finetuned models
+  -o \<output\_filename1\> \<output\_filename2\> \<output\_filename3\> \<output\_filename4\>  
+  -f \<ft\_biencoder\_path\> \<ft\_ce\_path\>           paths to pre-finetuned models  
   -q \<qrel\_path\>            path to qrel file (fine tunes model if -q but not -f)
 
 examples:
   
-  will manually fine tune and then provide all listed output files:
+  will manually fine tune and then provide all listed output files:  
   python main.py data/topics.json data/Answers.json -o bi_base.tsv bi_ft.tsv ce_base.tsv ce_ft.tsv -q data/qrel.tsv
